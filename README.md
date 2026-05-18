@@ -102,7 +102,7 @@ pip install -r requirements.txt
 python -m redteam
 ```
 
-启动后浏览器会打开本地 Gradio 页面。
+启动后浏览器会打开本地 Gradio 页面。修改代码后仅刷新浏览器无效，须重启后端。
 
 ## 使用流程
 
@@ -131,7 +131,16 @@ python -m redteam
 
 ## 评测结果
 ### 1. 去哪里看详细评分？
+前端主要看两个标签页：
+
+(1) Single Sample：用于单条样本调试。你输入一条 seed prompt，点 Run 后看三块结果：Summary（轮数、是否触发拒答等）、History（每轮 prompt/response/judge 轨迹表）、Raw Result（完整 JSON，适合排查细节）。
+
+(2) Batch Dataset：用于批量评测。你填数据路径、Limit、Resume Existing Output 后点 Run Batch。结果看两块：Batch Results（逐条样本表格，含 id、领域、rounds、refusals、status 等）和 Batch Meta（总体统计 + 输出文件路径，如 results/checkpoint/summary）。批量任务是否正常推进，优先看 Batch Meta 里的样本数和路径，再去对应 JSONL 文件确认行数增长。
+
+
 #### a. 单条测试时（看当前页面）
+`Single Sample` 里，`Summary` 是结论层：`rounds` 表示跑了几轮，`refusals` 表示命中拒答模板次数，`final_status` 是最后状态（`refusal`/`answered`/`empty`），`last_prompt` 是最后一轮给目标模型的提示词。`History` 是过程层：每行一轮，能看到该轮 prompt、response 和 judge 判断，适合分析为什么成功/失败。`Raw Result` 是全量原始 JSON，包含 trace 与全部中间字段，主要用于调试和复现。
+
 在最下方的 Raw Result JSON 框里，清清楚楚地记录着一个 scores 字典：
 
 ```json
@@ -145,8 +154,9 @@ python -m redteam
 ```
 
 #### b. 批量测试时（看本地文件）
-在批量跑测试时，网页端的表格确实只显示了 `final_status`。但系统实际上把每一条测试的完整 `scores`（包括目标模型的原始长段回复）都实时写入了你本地的 `.jsonl` 结果文件里。
+`Batch Dataset` 里，`Batch Results` 是样本级明细：每行对应一条数据，常用字段有 `id`、`source_column`、`primary_domain`、`secondary_domain`、`rounds`、`refusals`、`final_status`、`last_prompt`，若失败还会有 `error`。`Batch Meta` 是总体层：`num_samples` 总处理数，`num_refusals` 拒答样本数，`refusal_trigger_rate` 拒答率，`avg_rounds` 平均轮次，`by_source_column`/`by_primary_domain` 是分组统计，`output_path`/`summary_path`/`checkpoint_path` 是落盘文件位置。  
 
+理解上先看 `refusal_trigger_rate` 和分领域统计判断整体风险，再下钻到 `Batch Results` 找异常样本。
 
 ### 2. 评测维度详解
 
