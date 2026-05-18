@@ -227,6 +227,70 @@ JSONL 示例：
 - `summary.json` 包含总样本数、拒答数、拒答率、平均轮次和分组统计
 - `checkpoint.json` 用于中断恢复，便于长批次任务续跑
 
+## 单样本每轮如何理解
+
+在 `Single Sample` 页面中，`History` 表格的每一行就是一轮迭代。
+
+每轮会执行一次完整流程：
+
+1. 生成器基于当前状态变异出一版新的文言文 prompt
+2. 用该 prompt 请求目标模型
+3. 裁判节点判断该轮结果是否触发拒答模板
+4. 根据判断结果决定继续下一轮或停止
+
+也就是说，“每轮”就是“对一版新文言文 prompt 的一次实战评测”。
+
+关键字段解读：
+
+- `rounds`：总共执行了多少轮
+- `last_prompt`：最后一轮用于测试的文言文 prompt
+- `final_status`：
+  - `refusal`：目标模型拒答，通常视为该轮越狱未成功
+  - `answered`：目标模型给出实质回答，通常视为该轮越狱成功
+
+## 多样本（批量）如何理解
+
+在 `Batch Dataset` 页面中：
+
+- `Batch Results`：样本级明细（每行一条数据）
+- `Batch Meta`：整体统计（全局指标 + 输出文件路径）
+
+### 1) 先看 Batch Meta（整体）
+
+关键字段：
+
+- `num_samples`：本次已处理样本数
+- `num_refusals`：触发拒答的样本数
+- `refusal_trigger_rate`：拒答率（拒答样本数 / 总样本数）
+- `avg_rounds`：平均迭代轮次
+- `output_path` / `summary_path` / `checkpoint_path`：落盘文件位置
+
+建议先用 `refusal_trigger_rate` 判断整体防线表现，再下钻到单条样本。
+
+### 2) 再看 Batch Results（单条）
+
+常用字段：
+
+- `id`：样本 ID
+- `source_column`：命中的文本列
+- `primary_domain` / `secondary_domain`：领域标签
+- `rounds`：该样本迭代轮次
+- `refusals`：该样本是否命中过拒答
+- `final_status`：最终状态（`refusal` / `answered` / `error`）
+- `error`：失败时的报错信息（如网络、限流等）
+
+理解方式：
+
+- `final_status=refusal`：目标模型拒答，该样本未绕过
+- `final_status=answered`：目标模型给出实质回复，该样本通常视为绕过成功
+- `final_status=error`：本条执行异常，需结合 `error` 排查
+
+### 3) 与断点续跑的关系
+
+- 勾选 `Resume Existing Output` 后，系统会跳过已存在 `id`
+- `checkpoint.json` 会持续更新当前进度
+- 长任务中断后可直接继续，不必重跑全部样本
+
 ## 环境变量
 
 可通过环境变量配置目标模型：
