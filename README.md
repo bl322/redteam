@@ -106,7 +106,7 @@ python -m redteam
 
 ## 使用流程
 
-### 单样本测试（不过多赘述）
+### 单样本评测
 1. 打开 `Single Sample`
 2. 填写 `Seed Prompt`
 3. 设置 `Model`、`Base URL`、`API Key`
@@ -116,8 +116,10 @@ python -m redteam
 ![单样本测试](screenshots/image-3.png)
 ![单样本测试](screenshots/image-4.png)
 ![单样本测试](screenshots/image-5.png)
+![单样本测试](screenshots/image-7.png)
+![单样本测试](screenshots/image-8.png)
 
-### 批量评测（为主）
+### 批量评测
 1. 打开 `Batch Dataset`
 2. 填写数据集路径
 3. 设置 `Limit`
